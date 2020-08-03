@@ -4,27 +4,166 @@ import java.util.Scanner;
 
 
 //this class handles input/output
-//provide all mandatory information to Game class (name of players, users' moves)
-//make instance of AI player that returns moves of first player
+//provide all mandatory information to calls of methods of Game class (name of players, users' moves)
+//
+
 public class Stage {
+
+    static char[][] board;
+
     private Scanner scanner;
-    private char[][] board;
-    private int numberOfMoves;
+    private boolean resign;
     private Game game;
-    private TicTacToeAI playerAI;
 
 
     public Stage (){
         scanner=new Scanner(System.in);
         board=new char[3][3];
-        playerAI=new TicTacToeAI();
     }//end constructor
+
+
+    //initialize Game
+    public void startGame(){
+        String player1=askForName();
+
+        //
+        while (player1.equalsIgnoreCase("ai")) {
+            System.out.println("First player can not be AI, please insert your name again.");
+            player1 = askForName();
+        }
+
+        String player2=askForName();
+
+        game=new Game(player1, player2);
+
+        restartBoard();
+        playGame();
+    }//end method
+
+
+    // play game flow
+    public void playGame(){
+        int[] coordinates;
+
+        while(true){
+            //read current player input
+            coordinates=readPlayerInput();
+
+            //if the current player has resigned, end the game
+            if (resign) {
+                break;
+            }
+
+            updateGame(coordinates[0], coordinates[1]);
+
+            //check end of the game(victory/no more moves)
+            if (game.isGameOver(coordinates[0], coordinates[1])) {
+                break;
+            }
+        }//end while
+
+        //print status of the game:
+        printEndStatus();
+
+        //ask to play again
+        playAgain();
+
+    }//end method
+
+
+    //read input from current player
+    public int[] readPlayerInput (){
+        boolean inputValid=false;
+        int[] inputCoordinates=new int[2];
+
+        //determine who is on the move
+        game.assignCurrentPlayer();
+
+        //until the input is valid ask current player to make move
+        while (!inputValid) {
+            String input;
+
+            showStage();
+            System.out.println(game.nameOfPlayerOnTheMove() + " is playing:");
+            input = game.takePlayerInput();
+
+            //check if player has resigned
+            if (isResign(input)) {
+                resign=true;
+                game.setGameEndStatus(GameEnd.RESIGN);
+                return null;
+            }
+
+            //check input format: two values
+            if (isPlayerInputValid(input)) {
+
+                inputValid=true;
+
+                //vertical - row number
+                inputCoordinates[0] = Integer.parseInt(input.split(" ")[1]);
+                //horizontal - column number
+                inputCoordinates[1] = Integer.parseInt(input.split(" ")[0]);
+
+                //decrease value of coordinates for 1, since board dimensions start from 0
+                --inputCoordinates[0];
+                --inputCoordinates[1];
+
+
+            }
+
+        }//end while
+
+        return inputCoordinates;
+    }//end method
+
+
+
+    //update board and add move in game class
+    public void updateGame(int rowID, int columnID){
+        //play the move
+        game.addMove(rowID, columnID);
+
+        //add move on the board
+        board[rowID][columnID] = game.currentPlayerSing();
+
+    }//end method
+
+
+
+    //ask to play again
+    public void playAgain()
+    {
+        System.out.println("Do you want to play again?");
+        if(scanner.nextLine().equalsIgnoreCase("yes"))
+        {
+            startGame();
+        }else closeScanner();
+
+    }//end method
+
+
+    //print message about game end
+    public void printEndStatus(){
+        showStage();
+        switch (game.getGameEndStatus()) {
+            case WIN:
+                System.out.println("End of the game. " + game.nameOfPlayerOnTheMove() + " is winner!");
+                break;
+            case DRAW:
+                System.out.println("End of the game. Nobody won.");
+                break;
+            case RESIGN:
+                System.out.println(game.nameOfPlayerOnTheMove()+" has resigned.");
+                System.out.println(game.nameOfAnotherPlayer()+" is winner!");
+                break;
+        }//end switch
+    }//end method
+
+
 
     //method to restart stage = assign ' ' to all elements of board[][]
     public void restartBoard ()
     {
-        numberOfMoves = 0;
-
         for (int i = 0; i < 3 ; i++)
             for (int j = 0; j < 3; j++)
                 board[i][j]=' ';
@@ -48,114 +187,69 @@ public class Stage {
         return scanner.nextLine();
     }
 
-    //game stage flow
-    public void startGame(){
-        boolean resign=false;
-        String player2name;
-
-        player2name=askForName();
-        game=new Game("Computer", player2name);
-
-        //clean the board
-        restartBoard();
-
-        //start the game
-        while (true){
-            String input;
-            int[] xy=new int[2];        //for input coordinates xy[0]=x, xy[1]=y
-
-            //show current board
-            showStage();
-
-            //identify what player is on the move
-            game.whoIsPlaying(numberOfMoves);
-            System.out.println(game.nameOfCurrentPlayer() + " is playing:");
-
-            //check if it is player move
-            if(numberOfMoves%2!=0) {
-
-                //if the current player has resigned, next player on the move is winner
-                if ((input = scanner.nextLine()).equalsIgnoreCase("resign")) {
-                    resign=true;
-                    System.out.println("End of the game. " + game.nameOfCurrentPlayer() +" is winner!");
-                    break;
-                }
-
-                //check input format, if there are is 2 'words' written
-                if (input.split(" ").length == 2) {
-                    try {
-                        //this  method Integer.parseInt() throws NumberFormatException if string is not number
-                        //horizontal - columns
-                        xy[1] = Integer.parseInt(input.split(" ")[0]);
-                        //vertical - rows
-                        xy[0] = Integer.parseInt(input.split(" ")[1]);
-
-                        //check if numbers are in range: 1 to 3
-                        if (xy[0] < 1 || xy[0] > 3 || xy[1] < 1 || xy[1] > 3) {
-                            System.out.println("Invalid input: those coordinates are outside the playable area");
-                            continue;
-                        }
-                        //decrease it for one, since board dimension starts from 0
-                        xy[0]--;
-                        xy[1]--;
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid input: you must enter the x and y coordinates separated by spaces");
-                        continue;
-                    }
-                } else {
-                    System.out.println("Invalid input: you must enter the x and y coordinates separated by spaces");
-                    continue;
-                }
-            }else { //otherwise computer should make move, call AI methods to evaluate best move
-                xy= playerAI.findBestMove(board);
-            }
-
-            //check if the cell on the board is empty
-            if (board[xy[0]][xy[1]]!=' '){
-                System.out.println("Invalid input: that space is already taken");
-                continue;
-            }else
-            {
-                //add move and return true if true that move was winning move
-                if(game.play(xy[0], xy[1], numberOfMoves++))
-                {
-                    board[xy[0]][xy[1]]=game.currentPlayerSing();
-                    showStage();
-                    System.out.println("End of the game. "+game.nameOfCurrentPlayer()+" is winner!");
-                    break;
-                }
-                //add move on board
-                board[xy[0]][xy[1]]=game.currentPlayerSing();
-
-
-                //if it is 9th move and no winner till now, then it is end of the game
-                if(numberOfMoves==9) {
-                    showStage();
-                    System.out.println("End of the game. Nobody won.");
-                    break;
-                }
-            }
-
-        }//end while
-
-        //ask to play again only if in case that nobody 'resign' in the game
-        if (!resign)
-            playAgain();
-
-    }//end method
-
-
-
-    //ask to play again
-    public void playAgain()
+    //check if player has resigned
+    public boolean isResign(String input)
     {
-        System.out.println("Do you want to play again?");
-        if(scanner.nextLine().equalsIgnoreCase("yes"))
-        {
-            startGame();
-        }else closeScanner();
+        if (input.equalsIgnoreCase("resign"))
+            return true;
+        else return false;
 
     }//end method
+
+
+    //is input valid
+    public boolean isPlayerInputValid(String input) {
+
+        String[] coordinates=input.split(" ");
+
+        if (coordinates.length != 2) {
+            InputError.INVALID_COORDINATES_FORMAT.printMessage();
+            return false;
+        }else {
+
+            try {
+                //Integer.parseInt() returns an NumberFormatException if string can not be convert to int
+                int rowID = Integer.parseInt(input.split(" ")[1]);
+                int colID = Integer.parseInt(input.split(" ")[0]);
+
+                //decrease value of coordinates for 1, since board dimensions start from 0
+                --rowID;
+                --colID;
+
+                //check if numbers are in playable area range and if the cell is free
+                if (areCoordinatesValueValid(rowID, colID) && isPlaceAvailable(rowID, colID)) {
+                    return true;
+                }
+
+            } catch (NumberFormatException e) {
+                InputError.INVALID_COORDINATES_FORMAT.printMessage();
+                return false;
+            }
+        }
+    return false;
+    }//end method
+
+
+    public boolean isPlaceAvailable(int rowID, int columnID){
+        if (board[rowID][columnID]!=' ') {
+            InputError.INVALID_SPACE.printMessage();
+            return false;
+        }
+        return true;
+    }//end method
+
+
+
+
+    //check if coordinates value are inside playable area
+    public boolean areCoordinatesValueValid(int rowID, int columnID){
+        if (rowID < 0 || rowID > 2 || columnID < 0 || columnID > 2) {
+            InputError.INVALID_COORDINATES_VALUE.printMessage();
+            return false;
+        }else       return true;
+    }//end method
+
+
 
 
     public void closeScanner(){

@@ -4,38 +4,74 @@ package com.company;
 public class TicTacToe {
 
     private TicTacToePlayer playerScore;
+    private PlayerInput playerInput;
+    private boolean isWinner;
 
     public TicTacToe(String playerName, char sign) {
+        PlayerInputFactory playerInputFactory=new PlayerInputFactory();
+
         playerScore = new TicTacToePlayer(playerName, sign);
+        playerInput=playerInputFactory.factoryMethod(playerName, sign);
+        isWinner=false;
     }//end constructor
+
 
     //call all corresponding increase methods for adding this move
     public void addMove(int rowID, int columnID){
-            playerScore.increaseRows(rowID);
-            playerScore.increaseColumns(columnID);
-            if (columnID==rowID)
+            addValueInRows(rowID);
+            addValueInColumns(columnID);
+
+        if (columnID==rowID)
             {
-                playerScore.increaseDiagonalLeft();
-                if (columnID==1)
-                    playerScore.increaseDiagonalRight();
+                addValueInLeftDiagonal();
+                if (columnID==1) {
+                    addValueInRightDiagonal();
+                }
             }else if (rowID==0 && columnID==2 || rowID==2 && columnID==0)
-                playerScore.increaseDiagonalRight();
+                addValueInRightDiagonal();
     }//end method
 
-    //for the last made move, check if it brings the victory
-    public boolean checkWinner(int rowID, int columnID){
-        if(playerScore.checkRow(rowID)) return true;
-        if(playerScore.checkColumn(columnID)) return true;
-        if(playerScore.checkDiagonalLeft() ) return true;
-        if(playerScore.checkDiagonalRight() ) return true;
 
-        return false;
+    public void addValueInRows(int rowID){
+        playerScore.increaseRows(rowID);
+        if(playerScore.checkRow(rowID))
+            isWinner=true;
+    }
+
+    public void addValueInColumns(int columnID){
+        playerScore.increaseColumns(columnID);
+        if(playerScore.checkColumn(columnID))
+            isWinner=true;
+    }
+
+    public void addValueInLeftDiagonal(){
+        playerScore.increaseDiagonalLeft();
+        if(playerScore.checkDiagonalLeft())
+            isWinner=true;
+    }
+
+
+    public void addValueInRightDiagonal(){
+        playerScore.increaseDiagonalRight();
+        if(playerScore.checkDiagonalRight())
+            isWinner=true;
+    }
+
+
+
+
+    public boolean checkWinner(){
+        return isWinner;
     }//end method
 
 
     public TicTacToePlayer getPlayer(){
         return this.playerScore;
     }//end method
+
+    public String readInput(){
+        return playerInput.askForInput();
+    }
 
 
 

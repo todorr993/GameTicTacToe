@@ -31,10 +31,6 @@ public class TicTacToePlayer {
         return sign;
     }//end method
 
-    public int getDiagonalLeft() {
-        return diagonalLeft;
-    }//end method
-
     //increase sum of corresponding row
     public void increaseRows(int rowNumber){
         rows[rowNumber]=++rows[rowNumber];
