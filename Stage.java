@@ -36,7 +36,7 @@ public class Stage {
 
         game=new Game(player1, player2);
 
-        restartBoard();
+        restartGame();
         playGame();
     }//end method
 
@@ -161,9 +161,10 @@ public class Stage {
 
 
 
-    //method to restart stage = assign ' ' to all elements of board[][]
-    public void restartBoard ()
+    //restart stage = assign ' ' to all elements of board[][] and resign=false
+    public void restartGame()
     {
+        resign=false;
         for (int i = 0; i < 3 ; i++)
             for (int j = 0; j < 3; j++)
                 board[i][j]=' ';
